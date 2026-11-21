@@ -1,0 +1,36 @@
+{
+  "protocol": "rpen-mod",
+  "api": 1,
+  "id": "beat-grid-guide",
+  "name": {
+    "zh-CN": "自定义节拍高亮",
+    "en-US": "Custom Beat Highlight"
+  },
+  "version": "1.0.0",
+  "author": "",
+  "description": {
+    "zh-CN": "本模组为时间轴上的全部横线与音符视图竖线提供自定义的细分高亮，可以自定义节拍型、自定义配色或自定义吸附。默认全部关闭，启用模组后在编辑栏[吸附]按钮右侧会出现[网格]按钮，打开后可以进行自定义配置",
+    "en-US": "This mod adds customizable subdivision highlights to every horizontal line on the timeline and to the vertical lines in the note view. You can define your own beat patterns, colors and snapping. Everything is off by default; after enabling the mod, a [Grid] button appears to the right of the [Snap] button in the toolbar, where you can customize everything."
+  },
+  "entry": "main.mjs",
+  "settings": {
+    "toggle-key": {
+      "type": "shortcut",
+      "label": {
+        "zh-CN": "启用/停用 快捷键",
+        "en-US": "Enable/Disable shortcut"
+      },
+      "default": "M"
+    },
+    "snap-mode-key": {
+      "type": "shortcut",
+      "label": {
+        "zh-CN": "切换吸附模式 快捷键",
+        "en-US": "Toggle snap mode shortcut"
+      },
+      "default": "N"
+    }
+  },
+  "dependencies": [],
+  "conflicts": []
+}

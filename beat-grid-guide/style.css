@@ -1,0 +1,470 @@
+/* Beat Grid Guide — panel styled with the editor's own theme variables.
+   Fallbacks mirror RPEN's defaults: accent #ffdc70, panel #292929, text #eee,
+   muted #aaa, line #515151, bg #202124. */
+
+.bgg-toolbar-button { white-space: nowrap; }
+.bgg-toolbar-button.active { color: var(--accent, #ffdc70); }
+
+/* Fallback floating launcher (used only if the toolbar is missing). */
+.bgg-fab {
+  position: fixed;
+  left: 12px;
+  bottom: 64px;
+  z-index: 2147482000;
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--line, #515151);
+  border-radius: 14px;
+  background: var(--panel, #292929);
+  color: var(--text, #eee);
+  font: 12px/1 "RPE", "Microsoft YaHei", sans-serif;
+  cursor: pointer;
+}
+.bgg-fab:hover { border-color: var(--accent, #ffdc70); }
+
+/* =====================================================================
+   面板容器（尺寸 / 位置 / 层级）
+   · 默认靠右、450×700；宽度由 panel.mjs 的 fixedWidth() 控制，高度可拖底部横条调整。
+   · `overflow:hidden` + `border-radius` 会把子元素裁进圆角（关闭按钮贴边会被裁，已内缩）。
+   ===================================================================== */
+.bgg-panel {
+  position: fixed;
+  left: calc(100vw - 462px);
+  top: 70px;
+  z-index: 2147482001;
+  width: 450px;
+  height: 700px;
+  max-width: 92vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line, #515151);
+  border-radius: 10px;
+  background: var(--panel, #292929);
+  color: var(--text, #eee);
+  font: 13px/1.5 "RPE", "Microsoft YaHei", sans-serif;
+  box-shadow: 0 10px 34px #0008;
+  overflow: hidden;
+  user-select: none;
+}
+.bgg-panel[hidden] { display: none; }
+
+.bgg-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px 8px 16px;
+  background: #323232;
+  border-bottom: 1px solid var(--line, #515151);
+  cursor: move;
+  touch-action: none;
+}
+.bgg-title { font-weight: 600; letter-spacing: 1px; color: var(--text, #eee); }
+.bgg-close {
+  flex: none;
+  box-sizing: border-box;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted, #aaa);
+  font: 16px/1 "Segoe UI", "Microsoft YaHei", sans-serif;
+  cursor: pointer;
+}
+.bgg-close:hover { background: #3d3d3d; color: #fff; }
+
+.bgg-content { flex: 1; min-height: 0; display: flex; }
+.bgg-body { flex: 1; padding: 10px 12px; overflow-y: auto; }
+.bgg-body::-webkit-scrollbar { width: 8px; }
+.bgg-body::-webkit-scrollbar-thumb { background: var(--line, #515151); border-radius: 4px; }
+
+.bgg-section { padding: 8px 0; border-top: 1px solid var(--line, #515151); }
+.bgg-section:first-of-type { border-top: none; }
+.bgg-section-title {
+  margin-bottom: 6px;
+  color: var(--accent, #ffdc70);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+/* Sliding switch rows (light theme-agnostic track). */
+.bgg-toggle-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 0;
+  color: var(--text, #eee);
+  cursor: pointer;
+}
+.bgg-toggle-text { flex: 1; }
+/* =====================================================================
+   滑动开关（布尔开关）—— 样式与动画实现处
+   ---------------------------------------------------------------------
+   结构（见 panel.mjs 的 toggleRow）：
+     <label class="bgg-toggle-row">
+       <span class="bgg-toggle-text">文字</span>
+       <input class="bgg-switch-input" type="checkbox">   ← 隐藏的真实 checkbox
+       <span class="bgg-track"></span>                    ← 灰色轨道 + 白色圆点
+     </label>
+   动画：
+     · 轨道变色 = .bgg-track { transition: background .15s }
+     · 圆点平移 = .bgg-track::after { transition: transform .15s }
+     · 开启态 = `input:checked + .bgg-track`（黄色轨道）与 `+ ::after`（translateX 16px）
+   调参：改 .bgg-track 的 width/height/background、::after 的尺寸/颜色与 transition 时长。
+   ===================================================================== */
+/* 隐藏的真实 checkbox：绝对定位铺满整行（这样点击/聚焦不会滚动页面） */
+.bgg-switch-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.bgg-track {
+  position: relative;
+  flex: none;
+  width: 34px;
+  height: 18px;
+  border-radius: 9px;
+  background: #4a4a4a;          /* 关闭态轨道色，可改 */
+  transition: background .15s;  /* 轨道变色动画，可改 */
+}
+.bgg-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ddd;             /* 圆点颜色，可改 */
+  transition: transform .15s;   /* 圆点平移动画，可改 */
+}
+.bgg-switch-input:checked + .bgg-track { background: var(--accent, #ffdc70); }
+.bgg-switch-input:checked + .bgg-track::after { transform: translateX(16px); background: #222; }
+
+.bgg-mode-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 4px 0;
+  color: var(--text, #eee);
+  cursor: pointer;
+}
+.bgg-mode-row .bgg-toggle-text { flex: none; color: var(--muted, #aaa); }
+.bgg-mode-row .bgg-track { flex: none; }
+
+.bgg-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  color: var(--text, #eee);
+}
+.bgg-number {
+  width: 72px;
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid var(--line, #515151);
+  border-radius: 5px;
+  background: var(--bg, #202124);
+  color: var(--text, #eee);
+  font: 12px "RPE", sans-serif;
+}
+
+.bgg-patterns { display: flex; flex-direction: column; gap: 4px; margin: 4px 0; }
+
+/* 列表表头 + 行：共用同一套网格列宽，保证对齐 [拍型 | 是否高亮 | 颜色 | 粗细 | 透明度 | 线型] */
+.bgg-pattern-head,
+.bgg-pattern {
+  display: grid;
+  grid-template-columns: 50px 76px 34px 58px 54px minmax(56px, 1fr) 22px;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px;
+}
+.bgg-pattern-head { color: var(--muted, #aaa); font-size: 11px; text-align: center; }
+.bgg-pattern {
+  border: 1px solid var(--line, #515151);
+  border-radius: 6px;
+  background: #323232;
+}
+.bgg-pattern-name {
+  color: var(--muted, #aaa);
+  font-weight: 600;
+  text-align: center;
+}
+.bgg-mini {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--muted, #aaa);
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.bgg-mini .bgg-track { width: 28px; height: 16px; }
+.bgg-mini .bgg-track::after { width: 12px; height: 12px; }
+.bgg-mini .bgg-switch-input:checked + .bgg-track::after { transform: translateX(12px); }
+
+/* 竖向样式行（竖线区使用） */
+.bgg-style-row { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; }
+.bgg-color {
+  width: 30px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--line, #515151);
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+.bgg-thickness {
+  width: 64px;
+  height: 22px;
+  padding: 0 4px;
+  border: 1px solid var(--line, #515151);
+  border-radius: 4px;
+  background: var(--bg, #202124);
+  color: var(--text, #eee);
+  font: 12px "RPE", sans-serif;
+  box-sizing: border-box;
+}
+.bgg-opacity { width: 56px; accent-color: var(--accent, #ffdc70); }
+.bgg-style {
+  height: 22px;
+  border: 1px solid var(--line, #515151);
+  border-radius: 4px;
+  background: var(--bg, #202124);
+  color: var(--text, #eee);
+  font: 12px "RPE", sans-serif;
+}
+
+/* 网格行内：样式输入填满各自单元格 */
+.bgg-pattern .bgg-color { justify-self: center; }
+.bgg-pattern .bgg-thickness,
+.bgg-pattern .bgg-opacity,
+.bgg-pattern .bgg-style { width: 100%; box-sizing: border-box; }
+
+.bgg-del {
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #c1666b;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+.bgg-del:hover { background: #44262a; color: #ff8a8f; }
+
+.bgg-add-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.bgg-add-label { color: var(--muted, #aaa); font-size: 11px; }
+.bgg-denominator {
+  width: 64px;
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid var(--line, #515151);
+  border-radius: 5px;
+  background: var(--bg, #202124);
+  color: var(--text, #eee);
+  font: 12px "RPE", sans-serif;
+  box-sizing: border-box;
+}
+.bgg-add, .bgg-reset {
+  height: 24px;
+  padding: 0 12px;
+  border: 1px solid var(--line, #515151);
+  border-radius: 5px;
+  background: #3a3a3a;
+  color: var(--text, #eee);
+  font: 12px "RPE", sans-serif;
+  cursor: pointer;
+}
+.bgg-add:hover, .bgg-reset:hover { border-color: var(--accent, #ffdc70); }
+.bgg-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 10px;
+  margin-top: 6px;
+  border-top: 1px solid var(--line, #515151);
+}
+.bgg-reset { background: #3a2a2c; border-color: #4a3235; color: #e8b4b7; }
+.bgg-reset:hover { background: #4a3438; }
+
+.bgg-sub { margin: 2px 0 6px; color: var(--muted, #aaa); font-size: 11px; }
+.bgg-hint { margin: 2px 0 6px; color: var(--muted, #aaa); font-size: 11px; line-height: 1.5; }
+
+.bgg-status {
+  min-height: 22px;
+  padding: 4px 12px 6px;
+  border-top: 1px solid var(--line, #515151);
+  color: var(--muted, #aaa);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bgg-status[data-active="1"] { color: #8fce8f; }
+
+/* 底部居中高度把手：上下拖动改高度（逻辑见 panel.mjs 的 heightBar 监听）。
+   视觉就是中间那条 .bgg-heightbar::after（64×4 圆角横条），悬停变黄。 */
+.bgg-heightbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 14px;
+  cursor: ns-resize;
+  touch-action: none;
+}
+.bgg-heightbar::after {
+  content: '';
+  width: 64px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line, #515151);
+  transition: background .15s;
+}
+.bgg-heightbar:hover::after { background: var(--accent, #ffdc70); }
+
+/* Row with an inline shortcut badge (master switch, snap mode). */
+.bgg-row-with-badge { display: flex; align-items: center; gap: 6px; }
+.bgg-row-with-badge > .bgg-toggle-row { flex: 1; }
+
+.bgg-shortcut {
+  flex: none;
+  min-width: 26px;
+  height: 20px;
+  padding: 0 6px;
+  border: 1px solid var(--line, #515151);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted, #aaa);
+  font: 11px "RPE", sans-serif;
+  opacity: .55;
+  cursor: pointer;
+}
+.bgg-shortcut:hover { opacity: 1; }
+.bgg-shortcut[data-empty="1"] { opacity: .4; }
+.bgg-shortcut.recording { opacity: 1; border-color: var(--accent, #ffdc70); color: var(--accent, #ffdc70); }
+
+.bgg-mode-head { display: flex; align-items: center; justify-content: space-between; margin: 8px 0 4px; }
+.bgg-sub-label { color: var(--muted, #aaa); font-size: 12px; }
+
+/* =====================================================================
+   分段控件（吸附模式：仅高亮 / 仅原生）—— 样式与动画的唯一实现处
+   ---------------------------------------------------------------------
+   设计：灰色凹槽 + 可拖拽的黄色滑块 + 两个文字标签（不再使用 <button>）。
+     <div class="bgg-segment" data-mode="highlights|native">
+       <div class="bgg-seg-thumb"></div>                        ← 黄色滑块（可拖拽）
+       <span class="bgg-seg-label" data-side="left">仅高亮</span>
+       <span class="bgg-seg-label" data-side="right">仅原生</span>
+     </div>
+
+   交互（见 panel.mjs 的 modeSegment）：
+     · 拖动滑块，或点击任意一侧；松手时停靠到最近一侧（highlights / native）。
+     · 滑块位置由 CSS 变量 --thumb-x 控制（0% / 100% / 拖动时的像素值）。
+   动画：
+     · 滑块位移 = .bgg-seg-thumb { transform: translateX(var(--thumb-x,0%)); transition: transform .18s ease }
+     · 文字颜色 = 依据 data-mode 只高亮一侧（见下方两条规则）。
+   外观调参：
+     · 凹槽：.bgg-segment 的 background / box-shadow（内阴影）；
+     · 滑块：.bgg-seg-thumb 的 background / border-radius / box-shadow；
+     · 文字：.bgg-seg-label 的 color / font。
+   ===================================================================== */
+.bgg-segment {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 32px;
+  padding: 3px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #3f3f3f, #333); /* 灰色凹槽 */
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, .6), inset 0 -1px 2px rgba(0, 0, 0, .35); /* 内阴影/凹陷感 */
+  box-sizing: border-box;
+  user-select: none;
+  touch-action: none;
+  cursor: pointer;
+}
+.bgg-seg-thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  border-radius: 6px;
+  background: var(--accent, #ffdc70); /* 黄色滑块，可改 */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .4);
+  transform: translateX(var(--thumb-x, 0%));
+  transition: transform .18s ease; /* 停靠动画，可改 */
+  z-index: 1;
+}
+.bgg-seg-label {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  text-align: center;
+  font: 12px "RPE", sans-serif;
+  color: var(--muted, #aaa);
+  transition: color .18s ease;
+  pointer-events: none; /* 点击/拖拽统一交给 .bgg-segment 处理 */
+}
+/* 滑块在哪侧，哪侧文字变深色；另一侧保持浅灰。 */
+.bgg-segment[data-mode="highlights"] .bgg-seg-label[data-side="left"],
+.bgg-segment[data-mode="native"] .bgg-seg-label[data-side="right"] {
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+/* Beginner tutorial modal. */
+.bgg-tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, .5);
+}
+.bgg-tutorial {
+  width: min(560px, 92vw);
+  max-height: 86vh;
+  overflow: auto;
+  padding: 18px 20px;
+  border: 1px solid var(--line, #515151);
+  border-radius: 10px;
+  background: var(--panel, #292929);
+  color: var(--text, #eee);
+  font: 13px/1.7 "RPE", "Microsoft YaHei", sans-serif;
+  box-shadow: 0 16px 48px #000a;
+}
+.bgg-tutorial-title { margin-bottom: 10px; font-size: 15px; font-weight: 600; color: var(--accent, #ffdc70); }
+.bgg-tutorial-body p { margin: 6px 0; }
+.bgg-tutorial-body ul { margin: 6px 0; padding-left: 20px; }
+.bgg-tutorial-body li { margin: 5px 0; }
+.bgg-tutorial-footer { display: flex; justify-content: flex-end; margin-top: 12px; }
+.bgg-tutorial-close {
+  height: 28px;
+  padding: 0 16px;
+  border: 1px solid var(--accent, #ffdc70);
+  border-radius: 6px;
+  background: var(--accent, #ffdc70);
+  color: #1a1a1a;
+  font: 13px "RPE", sans-serif;
+  cursor: pointer;
+}
