@@ -1,5 +1,11 @@
 # 更新日志 / Changelog
 
+## v1.0.1
+
+### 功能 / Features
+- **测试更新**：完善了说明文档，测试学习更新流程。
+
+
 ## v1.0.0（首次发布 / Initial release）
 
 ### 功能 / Features
