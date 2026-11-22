@@ -581,7 +581,7 @@
   bottom: 2px;
   width: 12px;
   height: 12px;
-  cursor: ew-resize;
+  cursor: nwse-resize;
   background: linear-gradient(135deg, transparent 42%, var(--line, #515151) 42%);
   border-radius: 2px;
 }

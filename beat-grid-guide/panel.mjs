@@ -441,7 +441,7 @@ export function createPanel(api, config, onChange, options = {}) {
   const contentHost = el('div', { class: 'bgg-content' });
   const status = el('div', { class: 'bgg-status', text: '未启用（需打开总开关）' });
   const heightBar = el('div', { class: 'bgg-heightbar', title: '拖动调整高度' });
-  const widthBar = el('div', { class: 'bgg-widthbar', title: '拖动调整宽度' });
+  const widthBar = el('div', { class: 'bgg-widthbar', title: '拖动调整大小' });
 
   const close = el('button', { class: 'bgg-close', title: '关闭', text: '×' });
   const head = el('div', { class: 'bgg-head' },
@@ -453,7 +453,7 @@ export function createPanel(api, config, onChange, options = {}) {
   // ── 面板尺寸/位置 ──────────────────────────────────────────
   // 宽度默认 450（窄屏自适应），可拖右下角把手在 [450, 屏幕1/3] 内调整；高度在 [MIN_HEIGHT, 窗口高度] 内。
   function fixedWidth() { return Math.min(MIN_WIDTH, window.innerWidth); }
-  function maxWidth() { return Math.max(MIN_WIDTH, Math.floor(window.innerWidth / 3)); }
+  function maxWidth() { return Math.max(MIN_WIDTH, Math.floor(window.innerWidth / 2)); }
 
   function clampPanel() {
     if (panel.hidden) return;
@@ -530,17 +530,22 @@ export function createPanel(api, config, onChange, options = {}) {
     document.addEventListener('pointerup', up, true);
   });
 
-  // 右下角把手：左右拖动改变宽度（右缘固定，向左展宽）。
+  // 右下角把手：同时调整宽高（窗口左上角为锚点，向右下扩展）。
   widthBar.addEventListener('pointerdown', event => {
     if (event.button !== 0) return;
     const rect = panel.getBoundingClientRect();
-    const state = { x: event.clientX, width: rect.width, right: rect.right };
+    const state = { x: event.clientX, y: event.clientY, width: rect.width, height: rect.height, left: rect.left, top: rect.top };
     event.preventDefault();
     event.stopPropagation();
     const move = e => {
-      const width = Math.min(maxWidth(), Math.max(fixedWidth(), state.width + (state.x - e.clientX)));
+      const limitWidth = Math.min(maxWidth(), window.innerWidth - state.left);
+      const width = Math.min(limitWidth, Math.max(fixedWidth(), state.width + (e.clientX - state.x)));
+      const limitHeight = Math.max(MIN_HEIGHT, window.innerHeight - state.top);
+      const height = Math.min(limitHeight, Math.max(MIN_HEIGHT, state.height + (e.clientY - state.y)));
       panel.style.width = width + 'px';
-      panel.style.left = (state.right - width) + 'px';
+      panel.style.height = height + 'px';
+      panel.style.left = state.left + 'px';
+      panel.style.top = state.top + 'px';
       panel.style.maxHeight = 'none';
     };
     const up = () => {
