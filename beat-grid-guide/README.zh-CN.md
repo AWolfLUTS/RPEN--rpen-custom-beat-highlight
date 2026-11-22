@@ -1,14 +1,14 @@
 # 自定义节拍高亮（Custom Beat Highlight）
 
-RPEN 模组 · API 1 · 版本 `1.2.0` · 测试于 `Re:PhiEdit Next 0.14.0`
+RPEN 模组 · API 1 · 版本 `1.2.1` · 测试于 `Re:PhiEdit Next 0.14.0`
 
 给制谱时的网格参考线加上**分级高亮**与**自定义吸附**：在不改动原生网格与谱面数据的前提下，把各节拍细分用不同颜色标出来，并让音符/事件吸附到你选定的节拍型或原生细网格上。
 
 Adds **tiered highlights** and **custom snapping** to the chart grid: without touching the native grid or chart data, each beat subdivision is drawn in its own colour, and notes/events can snap to your chosen beat patterns or the native fine grid.
 
-> **默认仅整拍线开启**：启用后先只显示整拍线（基准），其余细分默认关闭，需在面板中按需开启。
+> **整拍线默认已勾选，但需先开启总开关与「启用横线高亮」**：这两项默认关闭，打开后才会显示整拍线（其余细分默认关闭，按需开启）。
 >
-> **Only the whole-beat line is on by default**: after enabling, only whole-beat lines show; turn on other subdivisions in the panel.
+> **The whole-beat line is checked by default, but the master switch and "Enable horizontal highlights" are off**: turn both on to see whole-beat lines; other subdivisions stay off until enabled.
 
 ---
 

@@ -28,7 +28,7 @@ export function createSnapper(api, getConfig) {
     return snapped;
   }
 
-  function snapNote(timeline, note) {
+  function snapNote(timeline, note, kind) {
     calls += 1;
     const config = getConfig();
     if (!snapEnabled(config) || !note || typeof note !== 'object') return note;
@@ -36,8 +36,11 @@ export function createSnapper(api, getConfig) {
       const start = beatValue(note.startTime);
       const end = beatValue(note.endTime);
       const division = Number(timeline.division) || 0;
-      const snappedStart = Number.isFinite(start) ? nearestSnapBeat(start, config, division) : start;
-      let snappedEnd = Number.isFinite(end) ? nearestSnapBeat(end, config, division) : end;
+      // 只吸附被拖动的那一端：拖尾不动头、拖头不动尾、整体移动才两端都吸附。
+      const snapStart = kind !== 'endTime';
+      const snapEnd = kind !== 'startTime';
+      const snappedStart = snapStart && Number.isFinite(start) ? nearestSnapBeat(start, config, division) : start;
+      let snappedEnd = snapEnd && Number.isFinite(end) ? nearestSnapBeat(end, config, division) : end;
       if (Number.isFinite(snappedStart) && Number.isFinite(snappedEnd) && snappedEnd < snappedStart) snappedEnd = snappedStart;
       if (Number.isFinite(snappedStart) && Math.abs(snappedStart - start) < 1e-9
         && Number.isFinite(snappedEnd) && Math.abs(snappedEnd - end) < 1e-9) return note;
@@ -73,7 +76,7 @@ export function createSnapper(api, getConfig) {
       const result = previous.call(this, note);
       try {
         if (!['move', 'startTime', 'endTime'].includes(this.drag?.kind)) return result;
-        return snapNote(this, result);
+        return snapNote(this, result, this.drag?.kind);
       } catch (error) { report(error); return result; }
     });
   }

@@ -2,7 +2,7 @@
 
 ![自定义节拍高亮 封面](preview/cover-16x9.png)
 
-RPEN（Re:PhiEdit Next）模组 · API 1 · 版本 **1.2.0**
+RPEN（Re:PhiEdit Next）模组 · API 1 · 版本 **1.2.1**
 
 模组作用：给制谱网格加上**分级高亮**与**自定义吸附**：不改动原生网格与谱面数据，把各节拍细分用不同颜色标出来，并让音符/事件吸附到选定的节拍型或原生细网格。
 
@@ -14,8 +14,8 @@ RPEN（Re:PhiEdit Next）模组 · API 1 · 版本 **1.2.0**
 
 直接下载最新打包文件（从 `dist/` 读取）：
 
-- [**自定义节拍高亮-Custom-Beat-Highlight-v1.2.0.rpenmod**（推荐）](https://github.com/AWolfLUTS/RPEN--rpen-custom-beat-highlight/raw/main/dist/%E8%87%AA%E5%AE%9A%E4%B9%89%E8%8A%82%E6%8B%8D%E9%AB%98%E4%BA%AE-Custom-Beat-Highlight-v1.2.0.rpenmod)
-- [自定义节拍高亮-Custom-Beat-Highlight-v1.2.0.zip](https://github.com/AWolfLUTS/RPEN--rpen-custom-beat-highlight/raw/main/dist/%E8%87%AA%E5%AE%9A%E4%B9%89%E8%8A%82%E6%8B%8D%E9%AB%98%E4%BA%AE-Custom-Beat-Highlight-v1.2.0.zip)
+- [**自定义节拍高亮-Custom-Beat-Highlight-v1.2.1.rpenmod**（推荐）](https://github.com/AWolfLUTS/RPEN--rpen-custom-beat-highlight/raw/main/dist/%E8%87%AA%E5%AE%9A%E4%B9%89%E8%8A%82%E6%8B%8D%E9%AB%98%E4%BA%AE-Custom-Beat-Highlight-v1.2.1.rpenmod)
+- [自定义节拍高亮-Custom-Beat-Highlight-v1.2.1.zip](https://github.com/AWolfLUTS/RPEN--rpen-custom-beat-highlight/raw/main/dist/%E8%87%AA%E5%AE%9A%E4%B9%89%E8%8A%82%E6%8B%8D%E9%AB%98%E4%BA%AE-Custom-Beat-Highlight-v1.2.1.zip)
 
 或到 [**Releases**](https://github.com/AWolfLUTS/RPEN--rpen-custom-beat-highlight/releases/latest) 下载带版本号的附件。
 
@@ -35,8 +35,8 @@ RPEN模组项目/
 │   ├─ icons/icon.svg
 │   └─ README.zh-CN.md
 ├─ dist/                   # 模组本体
-│   ├─ 自定义节拍高亮-Custom-Beat-Highlight-v1.2.0.rpenmod
-│   └─ 自定义节拍高亮-Custom-Beat-Highlight-v1.2.0.zip
+│   ├─ 自定义节拍高亮-Custom-Beat-Highlight-v1.2.1.rpenmod
+│   └─ 自定义节拍高亮-Custom-Beat-Highlight-v1.2.1.zip
 ├─ scripts/build.py        # 自动打包脚本（读取 mod.json 自动命名）
 ├─ docs/protocol/          # RPEN 官方模组协议文档（模组开发参考资料）
 ├─ README.md               # 本文件
@@ -72,8 +72,6 @@ RPEN模组项目/
 * 不要求署名。
 
 完整条款见 [LICENSE](LICENSE)。
-
-> 说明：PolyForm Noncommercial 1.0.0 属于“源码可见 / Source-available”，不是 OSI 定义的开源协议（开源协议不允许禁止商用）。
 
 > 说明：`docs/protocol/` 为 RPEN / Re:PhiEdit Next 的官方模组协议文档，版权归原作者，仅作开发参考。
 

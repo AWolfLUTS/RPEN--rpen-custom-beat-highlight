@@ -39,6 +39,7 @@ export function createPanel(api, config, onChange, options = {}) {
   let drag = null;
   let currentControls = null;
   let tutorial = null;
+  let cancelShortcutRecording = null;
 
   function commit() {
     clearTimeout(commitTimer);
@@ -78,6 +79,7 @@ export function createPanel(api, config, onChange, options = {}) {
       event.preventDefault();
       event.stopPropagation();
       if (badge.classList.contains('recording')) return;
+      cancelShortcutRecording?.();
       badge.classList.add('recording');
       const previous = badge.textContent;
       badge.textContent = '…';
@@ -85,12 +87,20 @@ export function createPanel(api, config, onChange, options = {}) {
         keyEvent.preventDefault();
         keyEvent.stopPropagation();
         window.removeEventListener('keydown', onKey, true);
+        cancelShortcutRecording = null;
         badge.classList.remove('recording');
         if (keyEvent.key === 'Escape') { badge.textContent = previous; return; }
         const value = keyEvent.key === 'Backspace' ? '' : fromKeyEvent(keyEvent);
         Promise.resolve(api.settings?.set?.(settingKey, value)).then(sync).catch(() => { badge.textContent = previous; });
       };
       window.addEventListener('keydown', onKey, true);
+      // 关面板/卸载时取消录制，避免下一次按键被误拦截。
+      cancelShortcutRecording = () => {
+        window.removeEventListener('keydown', onKey, true);
+        badge.classList.remove('recording');
+        badge.textContent = previous;
+        cancelShortcutRecording = null;
+      };
     });
     return { node: badge, sync };
   }
@@ -432,7 +442,7 @@ export function createPanel(api, config, onChange, options = {}) {
             text: 'github.com/AWolfLUTS/RPEN--rpen-custom-beat-highlight',
           }),
           el('span', { class: 'bgg-about-label', text: '版本' }),
-          el('span', { class: 'bgg-about-value', text: 'v' + (api.manifest?.version || '1.2.0') }),
+          el('span', { class: 'bgg-about-value', text: 'v' + (api.manifest?.version || '1.2.1') }),
         ),
       ),
     );
@@ -564,7 +574,7 @@ export function createPanel(api, config, onChange, options = {}) {
     clampPanel();
     launcher?.classList.add('active');
   }
-  function hide() { closeColorPop(); panel.hidden = true; launcher?.classList.remove('active'); }
+  function hide() { cancelShortcutRecording?.(); closeColorPop(); panel.hidden = true; launcher?.classList.remove('active'); }
   function toggle() { if (panel.hidden) show(); else hide(); }
 
   close.addEventListener('click', () => hide());
@@ -662,6 +672,7 @@ export function createPanel(api, config, onChange, options = {}) {
     showTutorial,
     dispose() {
       clearTimeout(commitTimer);
+      cancelShortcutRecording?.();
       closeColorPop();
       try { timer?.(); } catch (error) { /* ignore */ }
       try { onWindowResize?.(); } catch (error) { /* ignore */ }
