@@ -210,8 +210,9 @@ export function createPanel(api, config, onChange, options = {}) {
       el('label', { class: 'bgg-mini' }, toggle, el('span', { class: 'bgg-track' })),
       ...styleInputs(pattern),
     );
-    if (pattern.custom) {
-      const remove = el('button', { class: 'bgg-del', title: '删除', text: '×' });
+    const deletable = pattern.denominator !== 1 && pattern.id !== 'half' && config.horizontal.patterns.length > 2;
+    if (deletable) {
+      const remove = el('button', { class: 'bgg-del', title: '删除该条', text: '×' });
       remove.addEventListener('click', () => { removePattern(config, pattern.id); rebuild(); commit(); });
       row.append(remove);
     } else {
@@ -241,12 +242,23 @@ export function createPanel(api, config, onChange, options = {}) {
       if (event.button !== 0) return;
       const rect = wrap.getBoundingClientRect();
       const half = Math.max(1, (rect.width - 6) / 2);
-      let lastRaw = event.clientX - rect.left - 3;
-      thumb.style.transition = 'none';
+      const thumbRect = thumb.getBoundingClientRect();
+      const inside = event.clientX >= thumbRect.left - 4 && event.clientX <= thumbRect.right + 4;
       event.preventDefault();
       event.stopPropagation();
+      if (!inside) {
+        // 点在一侧：按轨道中线判断左右。
+        apply(event.clientX - rect.left - 3 > half);
+        commit();
+        return;
+      }
+      // 抓住滑块：记录抓取偏移，避免滑块“跳到鼠标左沿”。
+      const grabOffset = event.clientX - thumbRect.left;
+      let lastRaw = thumbRect.left - rect.left - 3;
+      thumb.style.transition = 'none';
+      wrap.dataset.dragging = '1';
       const onMove = e => {
-        const raw = e.clientX - rect.left - 3;
+        const raw = e.clientX - grabOffset - rect.left - 3;
         lastRaw = raw;
         wrap.style.setProperty('--thumb-x', Math.max(0, Math.min(half, raw)) + 'px');
         e.preventDefault();
@@ -255,6 +267,7 @@ export function createPanel(api, config, onChange, options = {}) {
         document.removeEventListener('pointermove', onMove, true);
         document.removeEventListener('pointerup', onUp, true);
         thumb.style.transition = '';
+        delete wrap.dataset.dragging;
         apply(lastRaw > half / 2);
         commit();
       };
@@ -263,6 +276,22 @@ export function createPanel(api, config, onChange, options = {}) {
     });
 
     return { node: wrap, sync() { apply(config.snap.mode === 'system'); } };
+  }
+
+  // 复用教程弹窗样式的确认框。
+  function confirmDialog(message, onConfirm) {
+    const cancel = el('button', { class: 'bgg-tutorial-close', text: '取消' });
+    const ok = el('button', { class: 'bgg-tutorial-close bgg-confirm-danger', text: '确定' });
+    const card = el('div', { class: 'bgg-tutorial' },
+      el('div', { class: 'bgg-tutorial-title', text: '确认' }),
+      el('div', { class: 'bgg-tutorial-body' }, el('p', { text: message })),
+      el('div', { class: 'bgg-tutorial-footer' }, cancel, ok));
+    const overlay = el('div', { class: 'bgg-tutorial-overlay', 'data-mod-interactive': 'true' }, card);
+    const dismiss = () => { try { overlay.remove(); } catch (error) { /* ignore */ } };
+    cancel.addEventListener('click', dismiss);
+    ok.addEventListener('click', () => { dismiss(); try { onConfirm(); } catch (error) { api.log?.('[beat-grid-guide] 确认操作失败', error); } });
+    overlay.addEventListener('click', event => { if (event.target === overlay) dismiss(); });
+    api.mount(overlay);
   }
 
   function buildBody() {
@@ -309,7 +338,7 @@ export function createPanel(api, config, onChange, options = {}) {
       el('span', { text: '粗细' }),
       el('span', { text: '透明度' }),
       el('span', { text: '线型' }),
-      el('span', { text: '' }));
+      el('span', { class: 'bgg-head-del', text: '删除该条' }));
 
     const numerator = el('input', { type: 'number', class: 'bgg-denominator', min: '1', max: '511', step: '1', placeholder: '分子' });
     const denominator = el('input', { type: 'number', class: 'bgg-denominator', min: '2', max: '512', step: '1', placeholder: '分母' });
@@ -326,10 +355,22 @@ export function createPanel(api, config, onChange, options = {}) {
       commit();
     });
 
-    const reset = el('button', { class: 'bgg-reset', text: '恢复默认' });
-    reset.addEventListener('click', () => {
-      try { onChange('reset'); } catch (error) { api.log?.('[beat-grid-guide] 恢复默认失败', error); }
+    // 恢复默认：全部拆成独立按钮。
+    const resetRow = el('div', { class: 'bgg-reset-row' });
+    for (const [label, part] of [['窗口大小', 'size'], ['快捷键', 'shortcuts'], ['横线配置', 'horizontal'], ['竖线配置', 'vertical'], ['吸附配置', 'snap']]) {
+      const item = el('button', { class: 'bgg-add', text: '恢复默认' + label });
+      item.addEventListener('click', () => {
+        try { options.resetPart?.(part); } catch (error) { api.log?.('[beat-grid-guide] 恢复默认失败', error); }
+      });
+      resetRow.append(item);
+    }
+    const resetAll = el('button', { class: 'bgg-reset', text: '恢复全部默认' });
+    resetAll.addEventListener('click', () => {
+      confirmDialog('确定要恢复全部默认吗？会重置所有配置与面板尺寸，且无法撤销。', () => {
+        try { onChange('reset'); } catch (error) { api.log?.('[beat-grid-guide] 恢复默认失败', error); }
+      });
     });
+    resetRow.append(resetAll);
 
     currentControls = controls;
     return el('div', { class: 'bgg-body' },
@@ -374,33 +415,51 @@ export function createPanel(api, config, onChange, options = {}) {
         el('div', { class: 'bgg-section-title', text: '诊断' }),
         debugToggle.node,
         el('p', { class: 'bgg-hint', text: '用于排查挂接问题，平时无需开启。' }),
+        resetRow,
       ),
 
-      el('div', { class: 'bgg-footer' }, reset),
+      el('div', { class: 'bgg-section' },
+        el('div', { class: 'bgg-section-title', text: '关于' }),
+        el('div', { class: 'bgg-about-grid' },
+          el('span', { class: 'bgg-about-label', text: '作者' }),
+          el('span', { class: 'bgg-about-value', text: '一只仰望星空的小狼' }),
+          el('span', { class: 'bgg-about-label', text: 'GitHub' }),
+          el('a', {
+            class: 'bgg-about-value',
+            href: 'https://github.com/AWolfLUTS/RPEN--rpen-custom-beat-highlight',
+            target: '_blank',
+            rel: 'noopener noreferrer',
+            text: 'github.com/AWolfLUTS/RPEN--rpen-custom-beat-highlight',
+          }),
+          el('span', { class: 'bgg-about-label', text: '版本' }),
+          el('span', { class: 'bgg-about-value', text: 'v' + (api.manifest?.version || '1.2.0') }),
+        ),
+      ),
     );
   }
 
   const contentHost = el('div', { class: 'bgg-content' });
   const status = el('div', { class: 'bgg-status', text: '未启用（需打开总开关）' });
   const heightBar = el('div', { class: 'bgg-heightbar', title: '拖动调整高度' });
+  const widthBar = el('div', { class: 'bgg-widthbar', title: '拖动调整宽度' });
 
   const close = el('button', { class: 'bgg-close', title: '关闭', text: '×' });
   const head = el('div', { class: 'bgg-head' },
     el('span', { class: 'bgg-title', text: '自定义节拍高亮' }), close);
 
-  const panel = el('div', { class: 'bgg-panel', 'data-mod-interactive': 'true' }, head, contentHost, status, heightBar);
+  const panel = el('div', { class: 'bgg-panel', 'data-mod-interactive': 'true' }, head, contentHost, status, heightBar, widthBar);
   panel.hidden = true;
 
-  // Width is fixed (fits the content, never more than 1/3 of the viewport).
   // ── 面板尺寸/位置 ──────────────────────────────────────────
-  // 宽度固定（450，窄屏自适应到屏宽）；高度在 [MIN_HEIGHT, 窗口高度] 内。
+  // 宽度默认 450（窄屏自适应），可拖右下角把手在 [450, 屏幕1/3] 内调整；高度在 [MIN_HEIGHT, 窗口高度] 内。
   function fixedWidth() { return Math.min(MIN_WIDTH, window.innerWidth); }
+  function maxWidth() { return Math.max(MIN_WIDTH, Math.floor(window.innerWidth / 3)); }
 
   function clampPanel() {
     if (panel.hidden) return;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const width = fixedWidth();
+    const width = Math.min(Math.max(fixedWidth(), panel.offsetWidth), maxWidth());
     const height = Math.min(Math.max(MIN_HEIGHT, panel.offsetHeight), vh);
     panel.style.width = width + 'px';
     panel.style.height = height + 'px';
@@ -471,6 +530,28 @@ export function createPanel(api, config, onChange, options = {}) {
     document.addEventListener('pointerup', up, true);
   });
 
+  // 右下角把手：左右拖动改变宽度（右缘固定，向左展宽）。
+  widthBar.addEventListener('pointerdown', event => {
+    if (event.button !== 0) return;
+    const rect = panel.getBoundingClientRect();
+    const state = { x: event.clientX, width: rect.width, right: rect.right };
+    event.preventDefault();
+    event.stopPropagation();
+    const move = e => {
+      const width = Math.min(maxWidth(), Math.max(fixedWidth(), state.width + (state.x - e.clientX)));
+      panel.style.width = width + 'px';
+      panel.style.left = (state.right - width) + 'px';
+      panel.style.maxHeight = 'none';
+    };
+    const up = () => {
+      document.removeEventListener('pointermove', move, true);
+      document.removeEventListener('pointerup', up, true);
+      clampPanel();
+    };
+    document.addEventListener('pointermove', move, true);
+    document.addEventListener('pointerup', up, true);
+  });
+
   function show() {
     panel.hidden = false;
     if (!panel.style.left) { panel.style.left = 'calc(100vw - ' + (MIN_WIDTH + 12) + 'px)'; panel.style.top = '70px'; }
@@ -514,7 +595,12 @@ export function createPanel(api, config, onChange, options = {}) {
     status.textContent = '吸附：仅高亮' + (names.length ? '（' + names.join('、') + '）' : '（未选择节拍型）') + ' · 已响应 ' + stats.calls + ' 次';
   }
 
-  function rebuild() { contentHost.replaceChildren(buildBody()); refreshStatus(); }
+  function rebuild() {
+    const scrollTop = contentHost.scrollTop;
+    contentHost.replaceChildren(buildBody());
+    contentHost.scrollTop = scrollTop;
+    refreshStatus();
+  }
 
   // In-place sync (no rebuild, keeps scroll position) for shortcut-driven changes.
   function sync() {

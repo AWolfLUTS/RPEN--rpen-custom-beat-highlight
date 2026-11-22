@@ -1,6 +1,6 @@
 # 自定义节拍高亮（Custom Beat Highlight）
 
-RPEN（Re:PhiEdit Next）模组 · API 1 · 版本 **1.1.0**
+RPEN（Re:PhiEdit Next）模组 · API 1 · 版本 **1.2.0**
 
 模组作用：给制谱网格加上**分级高亮**与**自定义吸附**：不改动原生网格与谱面数据，把各节拍细分用不同颜色标出来，并让音符/事件吸附到选定的节拍型或原生细网格。
 
@@ -12,12 +12,10 @@ RPEN（Re:PhiEdit Next）模组 · API 1 · 版本 **1.1.0**
 
 直接下载最新打包文件（从 `dist/` 读取）：
 
-- [**自定义节拍高亮-Custom-Beat-Highlight-v1.1.0.rpenmod**（推荐）](https://github.com/AWolfLUTS/RPEN--rpen-custom-beat-highlight/raw/main/dist/%E8%87%AA%E5%AE%9A%E4%B9%89%E8%8A%82%E6%8B%8D%E9%AB%98%E4%BA%AE-Custom-Beat-Highlight-v1.1.0.rpenmod)
-- [自定义节拍高亮-Custom-Beat-Highlight-v1.1.0.zip](https://github.com/AWolfLUTS/RPEN--rpen-custom-beat-highlight/raw/main/dist/%E8%87%AA%E5%AE%9A%E4%B9%89%E8%8A%82%E6%8B%8D%E9%AB%98%E4%BA%AE-Custom-Beat-Highlight-v1.1.0.zip)
+- [**自定义节拍高亮-Custom-Beat-Highlight-v1.2.0.rpenmod**（推荐）](https://github.com/AWolfLUTS/RPEN--rpen-custom-beat-highlight/raw/main/dist/%E8%87%AA%E5%AE%9A%E4%B9%89%E8%8A%82%E6%8B%8D%E9%AB%98%E4%BA%AE-Custom-Beat-Highlight-v1.2.0.rpenmod)
+- [自定义节拍高亮-Custom-Beat-Highlight-v1.2.0.zip](https://github.com/AWolfLUTS/RPEN--rpen-custom-beat-highlight/raw/main/dist/%E8%87%AA%E5%AE%9A%E4%B9%89%E8%8A%82%E6%8B%8D%E9%AB%98%E4%BA%AE-Custom-Beat-Highlight-v1.2.0.zip)
 
 或到 [**Releases**](https://github.com/AWolfLUTS/RPEN--rpen-custom-beat-highlight/releases/latest) 下载带版本号的附件。
-
-> 每次打包运行 `python scripts/build.py`，自动生成 `中文-英文-v版本号` 的文件名。
 
 ## 目录结构
 
@@ -34,11 +32,11 @@ RPEN模组项目/
 │   ├─ style.css
 │   ├─ icons/icon.svg
 │   └─ README.zh-CN.md
-├─ dist/                   # 打包产物（中文-英文-v版本号）
-│   ├─ 自定义节拍高亮-Custom-Beat-Highlight-v1.1.0.rpenmod
-│   └─ 自定义节拍高亮-Custom-Beat-Highlight-v1.1.0.zip
-├─ scripts/build.py        # 打包脚本（读取 mod.json 自动命名）
-├─ docs/protocol/          # RPEN 官方模组协议文档（参考资料，非本模组内容）
+├─ dist/                   # 模组本体
+│   ├─ 自定义节拍高亮-Custom-Beat-Highlight-v1.2.0.rpenmod
+│   └─ 自定义节拍高亮-Custom-Beat-Highlight-v1.2.0.zip
+├─ scripts/build.py        # 自动打包脚本（读取 mod.json 自动命名）
+├─ docs/protocol/          # RPEN 官方模组协议文档（模组开发参考资料）
 ├─ README.md               # 本文件
 ├─ CHANGELOG.md            # 更新日志
 ├─ LICENSE                 # 许可证

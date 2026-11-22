@@ -65,7 +65,40 @@ export function activate(api) {
     if (config.debug) logProbe();
   }
 
-  const panel = createPanel(api, config, applyChange, { getStats: snapper.getStats });
+  // 单项恢复：只重置对应部分（部分重载面板，部分只动设置/尺寸）。
+  function resetPart(part) {
+    const fresh = createDefaultConfig();
+    if (part === 'size') { panel.resetSize(); return; }
+    if (part === 'shortcuts') {
+      try { api.settings?.set?.('toggle-key', 'M'); } catch (error) { /* ignore */ }
+      try { api.settings?.set?.('snap-mode-key', 'N'); } catch (error) { /* ignore */ }
+      panel.sync();
+      return;
+    }
+    if (part === 'horizontal') {
+      config.horizontal.enabled = fresh.horizontal.enabled;
+      config.horizontal.renderMode = fresh.horizontal.renderMode;
+      config.horizontal.patterns = fresh.horizontal.patterns;
+    } else if (part === 'vertical') {
+      config.vertical.enabled = fresh.vertical.enabled;
+      config.vertical.period = fresh.vertical.period;
+      config.vertical.snapX = fresh.vertical.snapX;
+      Object.assign(config.vertical.highlight, fresh.vertical.highlight);
+      Object.assign(config.vertical.center, fresh.vertical.center);
+    } else if (part === 'snap') {
+      Object.assign(config.snap, fresh.snap);
+    } else {
+      resetInPlace();
+    }
+    version += 1;
+    saveConfig(api, config);
+    renderer.invalidate();
+    try { api.editor.invalidate(); } catch (error) { /* ignore */ }
+    panel.refresh();
+    if (config.debug) logProbe();
+  }
+
+  const panel = createPanel(api, config, applyChange, { getStats: snapper.getStats, resetPart });
 
   // Commands: bind through manifest shortcuts, and expose a manager button.
   const offCommands = [];

@@ -178,6 +178,11 @@ export function addCustomPattern(config, numerator, denominator) {
 }
 
 export function removePattern(config, id) {
-  const index = config.horizontal.patterns.findIndex(pattern => pattern.id === id);
-  if (index >= 0) config.horizontal.patterns.splice(index, 1);
+  const patterns = config.horizontal.patterns;
+  const index = patterns.findIndex(pattern => pattern.id === id);
+  if (index < 0) return;
+  const pattern = patterns[index];
+  // 1/1 与 1/2 不可删除；至少保留 2 个节拍型。
+  if (pattern.denominator === 1 || pattern.id === 'half' || patterns.length <= 2) return;
+  patterns.splice(index, 1);
 }

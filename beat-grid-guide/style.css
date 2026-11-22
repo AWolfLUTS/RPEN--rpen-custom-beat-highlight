@@ -46,6 +46,7 @@
   box-shadow: 0 10px 34px #0008;
   overflow: hidden;
   user-select: none;
+  box-sizing: border-box;
 }
 .bgg-panel[hidden] { display: none; }
 
@@ -190,7 +191,7 @@
 .bgg-pattern-head,
 .bgg-pattern {
   display: grid;
-  grid-template-columns: 50px 76px 34px 58px 54px minmax(56px, 1fr) 22px;
+  grid-template-columns: 50px 76px 34px 58px 54px minmax(56px, 1fr) 46px;
   align-items: center;
   gap: 6px;
   padding: 5px 6px;
@@ -363,8 +364,8 @@
   margin-top: 6px;
   border-top: 1px solid var(--line, #515151);
 }
-.bgg-reset { background: #3a2a2c; border-color: #4a3235; color: #e8b4b7; }
-.bgg-reset:hover { background: #4a3438; }
+.bgg-reset { background: #4a262a; border-color: #6a3438; color: #ffb3b8; }
+.bgg-reset:hover { background: #5a2e33; }
 
 .bgg-sub { margin: 2px 0 6px; color: var(--muted, #aaa); font-size: 11px; }
 .bgg-hint { margin: 2px 0 6px; color: var(--muted, #aaa); font-size: 11px; line-height: 1.5; }
@@ -517,7 +518,9 @@
 .bgg-tutorial-body p { margin: 6px 0; }
 .bgg-tutorial-body ul { margin: 6px 0; padding-left: 20px; }
 .bgg-tutorial-body li { margin: 5px 0; }
-.bgg-tutorial-footer { display: flex; justify-content: flex-end; margin-top: 12px; }
+.bgg-tutorial-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.bgg-confirm-danger { border-color: #7a3a40; background: #5a2a2e; color: #ffb3b8; }
+.bgg-confirm-danger:hover { background: #6a3036; }
 .bgg-tutorial-close {
   height: 28px;
   padding: 0 16px;
@@ -528,3 +531,58 @@
   font: 13px "RPE", sans-serif;
   cursor: pointer;
 }
+
+/* =====================================================================
+   交互反馈 / 关于 / 折叠 / 恢复默认拆分
+   ===================================================================== */
+
+/* 悬停提亮：提示可交互 */
+.bgg-toggle-row:hover .bgg-track,
+.bgg-mini:hover .bgg-track,
+.bgg-track:hover { filter: brightness(1.12); }
+.bgg-color-swatch:hover,
+.bgg-swatch:hover { filter: brightness(1.12); }
+.bgg-shortcut:hover { filter: brightness(1.15); }
+.bgg-close:hover,
+.bgg-add:hover,
+.bgg-del:hover { filter: brightness(1.12); }
+.bgg-segment:not([data-dragging]):hover .bgg-seg-thumb { filter: brightness(1.08); }
+
+/* 拖动时：滑块压暗 + 抓取光标 */
+.bgg-segment[data-dragging] { cursor: grabbing; }
+.bgg-segment[data-dragging] .bgg-seg-thumb { filter: brightness(.82); }
+
+/* 恢复默认：全部拆成独立按钮 */
+.bgg-reset-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.bgg-reset-row .bgg-add,
+.bgg-reset-row .bgg-reset { flex: 0 0 calc(33.333% - 4px); }
+
+/* 关于：左标签 + 右值两列 */
+.bgg-about-grid {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 4px 12px;
+  padding: 2px 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.bgg-about-label { color: var(--muted, #aaa); }
+.bgg-about-value { color: var(--text, #eee); overflow-wrap: anywhere; }
+.bgg-about-value[href] { color: var(--accent, #ffdc70); text-decoration: none; }
+.bgg-about-value[href]:hover { text-decoration: underline; }
+
+/* 表头「删除该条」列 */
+.bgg-head-del { font-size: 10px; white-space: nowrap; }
+
+/* 右下角宽度把手（悬停变黄，与高度横条一致） */
+.bgg-widthbar {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 12px;
+  height: 12px;
+  cursor: ew-resize;
+  background: linear-gradient(135deg, transparent 42%, var(--line, #515151) 42%);
+  border-radius: 2px;
+}
+.bgg-widthbar:hover { background: linear-gradient(135deg, transparent 42%, var(--accent, #ffdc70) 42%); }
