@@ -52,7 +52,7 @@ export function createDefaultConfig() {
       center: { enabled: false, color: '#ffffff', thickness: 2.0, opacity: 1.0, style: 'solid' },
       snapX: false,
     },
-    snap: { enabled: false, mode: 'highlights' },
+    snap: { enabled: true, mode: 'system' },
     debug: false,
     tutorialSeen: false,
   };
@@ -112,7 +112,7 @@ function mergeHorizontal(target, source) {
       if (!list.some(pattern => pattern.denominator === 1)) {
         const whole = normalizePattern({
           id: 'whole', name: '整拍 1/1', numerator: 1, denominator: 1, enabled: true,
-          color: '#fbf4f4', thickness: 1.8, opacity: 1, style: 'solid', mode: 'auto',
+          color: '#f2efe9', thickness: 1.8, opacity: 1, style: 'solid', mode: 'auto',
         });
         if (whole) list.unshift(whole);
       }

@@ -4,6 +4,8 @@
 import { addCustomPattern, removePattern } from './config.mjs';
 
 const STYLE_LABELS = { solid: '实线', dashed: '虚线', dotted: '点线' };
+// 取色浮层的 9 个预设色（与默认节拍型配色相近但不完全相同）。
+const SWATCH_COLORS = ['#efe9df', '#ff6060', '#4aaeff', '#ffc23d', '#b18cff', '#3dd6a0', '#ff7f96', '#2fe0f0', '#b6f04a'];
 const MIN_WIDTH = 450;
 const MIN_HEIGHT = 700;
 
@@ -93,10 +95,78 @@ export function createPanel(api, config, onChange, options = {}) {
     return { node: badge, sync };
   }
 
+  // 取色：色块按钮 + 2×5 浮层（前 9 预设色 + 第 10 格「笔」自定义）。
+  let activeColorPop = null;
+  function closeColorPop() {
+    if (!activeColorPop) return;
+    const close = activeColorPop;
+    activeColorPop = null;
+    close();
+  }
+  function colorField(source) {
+    const field = el('div', { class: 'bgg-color-field' });
+    const swatch = el('button', { type: 'button', class: 'bgg-color-swatch', title: '颜色' });
+    swatch.style.background = source.color;
+    const native = el('input', { type: 'color', class: 'bgg-color-native' });
+    native.value = source.color;
+    native.addEventListener('input', () => {
+      source.color = native.value;
+      swatch.style.background = native.value;
+      commit();
+    });
+    const pop = el('div', { class: 'bgg-color-pop' });
+    pop.hidden = true;
+    for (const hex of SWATCH_COLORS) {
+      const cell = el('button', { type: 'button', class: 'bgg-swatch', title: hex });
+      cell.style.background = hex;
+      cell.addEventListener('click', () => {
+        source.color = hex;
+        swatch.style.background = hex;
+        commit();
+        closeColorPop();
+      });
+      pop.append(cell);
+    }
+    const custom = el('button', { type: 'button', class: 'bgg-swatch bgg-swatch-custom', title: '自定义颜色', text: '✏' });
+    custom.addEventListener('click', () => {
+      closeColorPop();
+      native.click();
+    });
+    pop.append(custom);
+
+    function openPop() {
+      closeColorPop();
+      pop.hidden = false;
+      const rect = swatch.getBoundingClientRect();
+      const pw = pop.offsetWidth;
+      const ph = pop.offsetHeight;
+      let left = rect.left + rect.width / 2 - pw / 2;
+      left = Math.max(4, Math.min(left, window.innerWidth - pw - 4));
+      let top = rect.bottom + 4;
+      if (top + ph > window.innerHeight - 4) top = rect.top - ph - 4;
+      pop.style.left = left + 'px';
+      pop.style.top = Math.max(4, top) + 'px';
+      const onDoc = event => { if (!field.contains(event.target)) closeColorPop(); };
+      const onKey = event => { if (event.key === 'Escape') closeColorPop(); };
+      document.addEventListener('pointerdown', onDoc, true);
+      document.addEventListener('keydown', onKey, true);
+      activeColorPop = () => {
+        pop.hidden = true;
+        document.removeEventListener('pointerdown', onDoc, true);
+        document.removeEventListener('keydown', onKey, true);
+      };
+    }
+    swatch.addEventListener('click', () => {
+      if (pop.hidden) openPop(); else closeColorPop();
+    });
+
+    field.append(swatch, native, pop);
+    return field;
+  }
+
   // 一组样式输入（颜色/粗细/透明度/线型）。返回 4 个元素：可放入网格行或 .bgg-style-row。
   function styleInputs(source) {
-    const color = el('input', { type: 'color', class: 'bgg-color', value: source.color, title: '颜色' });
-    color.addEventListener('input', () => { source.color = color.value; commit(); });
+    const color = colorField(source);
     const thickness = el('input', {
       type: 'number', class: 'bgg-thickness', min: '0.5', max: '12', step: '0.1',
       value: String(source.thickness), title: '粗细',
@@ -214,7 +284,7 @@ export function createPanel(api, config, onChange, options = {}) {
     const centreToggle = toggleRow('单独强调中心线（x=0）', config.vertical.center.enabled, value => { config.vertical.center.enabled = value; commit(); });
     controls.center = centreToggle.input;
 
-    const snapToggle = toggleRow('吸附开关', config.snap.enabled, value => { config.snap.enabled = value; commit(); });
+    const snapToggle = toggleRow('吸附功能总开关', config.snap.enabled, value => { config.snap.enabled = value; commit(); });
     controls.snap = snapToggle.input;
     const snapBadge = shortcutBadge('snap-mode-key');
     controls.badgeSnap = snapBadge.sync;
@@ -401,7 +471,7 @@ export function createPanel(api, config, onChange, options = {}) {
     clampPanel();
     launcher?.classList.add('active');
   }
-  function hide() { panel.hidden = true; launcher?.classList.remove('active'); }
+  function hide() { closeColorPop(); panel.hidden = true; launcher?.classList.remove('active'); }
   function toggle() { if (panel.hidden) show(); else hide(); }
 
   close.addEventListener('click', () => hide());
@@ -466,7 +536,7 @@ export function createPanel(api, config, onChange, options = {}) {
           el('li', { text: '总开关：控制整个模组是否生效（默认快捷键 M，点按开关附近半透明按钮即可修改），关闭后全部功能不生效。' }),
           el('li', { text: '横线区域：自定义每拍内的细分高亮线。每个节拍型均按照「分子/分母」，如 1/4、3/4；勾选「高亮」即显示，可自定义颜色透明度等属性。' }),
           el('li', { text: '竖线区域：音符视图的 X 坐标参考线，以中心对称、每隔 M 根高亮一根。' }),
-          el('li', { text: '吸附开关：打开后吸附全部已开启的高亮线。模式：「仅高亮」仅吸附到高亮线，「仅原生」仅吸附到原生细网格（默认快捷键 N 切换，点按开关附近半透明按钮即可修改）。' }),
+          el('li', { text: '吸附功能总开关：打开后吸附全部已开启的高亮线。模式：「仅高亮」仅吸附到高亮线，「仅原生」仅吸附到原生细网格（默认快捷键 N 切换，点按开关附近半透明按钮即可修改）。' }),
           el('li', { text: '其他提示：相邻节拍过近可能导致吸附错位，请合理搭配节拍型、避免位置过于密集。' }),
         ),
         el('p', { text: '可在模组管理器点击「重看新手教程」再次查看本说明。' }),
@@ -494,6 +564,7 @@ export function createPanel(api, config, onChange, options = {}) {
     showTutorial,
     dispose() {
       clearTimeout(commitTimer);
+      closeColorPop();
       try { timer?.(); } catch (error) { /* ignore */ }
       try { onWindowResize?.(); } catch (error) { /* ignore */ }
       if (tutorial) { try { tutorial.remove(); } catch (error) { /* ignore */ } tutorial = null; }

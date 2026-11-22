@@ -77,13 +77,31 @@ export function activate(api) {
     id: 'toggle',
     title: '启用/停用高亮',
     setting: 'toggle-key',
-    run() { config.enabled = !config.enabled; applyChange('command'); },
+    run() {
+      config.enabled = !config.enabled;
+      applyChange('command');
+      const snapText = config.snap.enabled ? '开启' : '关闭';
+      api.notify?.(config.enabled ? `高亮已打开 当前吸附已${snapText}` : `高亮已关闭 当前吸附已${snapText}`, 'warning');
+      if (!config.horizontal.enabled && !config.vertical.enabled) {
+        api.notify?.('当前没有高亮配置，请前往配置界面进行配置', 'warning');
+      }
+    },
   });
   registerCommand({
     id: 'toggle-snap-mode',
     title: '切换吸附模式（仅高亮/仅原生）',
     setting: 'snap-mode-key',
-    run() { config.snap.mode = config.snap.mode === 'highlights' ? 'system' : 'highlights'; applyChange('command'); },
+    run() {
+      if (!config.enabled || !config.horizontal.enabled) {
+        const hotkey = api.settings?.get?.('toggle-key') || 'M';
+        api.notify?.(`高亮行未开启，无法启动吸附，请按按键"${hotkey}"启动`, 'warning');
+        return;
+      }
+      config.snap.mode = config.snap.mode === 'highlights' ? 'system' : 'highlights';
+      applyChange('command');
+      api.notify?.(config.snap.mode === 'highlights' ? '吸附模式：仅高亮' : '吸附模式：仅原生', 'warning');
+      if (!config.snap.enabled) api.notify?.('注意：吸附功能总开关未开启', 'warning');
+    },
   });
   registerCommand({
     id: 'open-settings',
