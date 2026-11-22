@@ -223,6 +223,26 @@
 
 /* 竖向样式行（竖线区使用） */
 .bgg-style-row { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; }
+
+/* 竖线区的样式行：与横线列表共用列宽，色卡左缘对齐 */
+.bgg-style-grid {
+  display: grid;
+  grid-template-columns: 50px 76px 34px 58px 54px minmax(56px, 1fr);
+  gap: 6px;
+  align-items: center;
+  padding: 5px 6px;
+  margin: 2px 0 4px;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+}
+.bgg-style-grid-label {
+  grid-column: 1 / 3;
+  color: var(--muted, #aaa);
+  font-size: 12px;
+}
+.bgg-style-grid .bgg-thickness,
+.bgg-style-grid .bgg-opacity,
+.bgg-style-grid .bgg-style { width: 100%; box-sizing: border-box; }
 /* 取色：色块 + 浮层（2×5：前 9 预设 + 第 10 格「笔」自定义） */
 .bgg-color-field { position: relative; justify-self: center; }
 .bgg-color-swatch {

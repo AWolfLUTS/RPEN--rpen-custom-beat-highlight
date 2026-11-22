@@ -191,6 +191,13 @@ export function createPanel(api, config, onChange, options = {}) {
     return el('div', { class: 'bgg-style-row' }, ...styleInputs(source));
   }
 
+  // 竖线区：标签 + 与横线列表同列宽对齐的样式行。
+  function styleGrid(label, source) {
+    return el('div', { class: 'bgg-style-grid' },
+      el('span', { class: 'bgg-style-grid-label', text: label }),
+      ...styleInputs(source));
+  }
+
   function patternRow(pattern) {
     const row = el('div', { class: 'bgg-pattern' });
     const toggle = switchInput(pattern.enabled, value => {
@@ -347,9 +354,9 @@ export function createPanel(api, config, onChange, options = {}) {
         el('div', { class: 'bgg-section-title', text: '竖线（音符 X 坐标，居中对称）' }),
         verticalToggle.node,
         el('label', { class: 'bgg-field' }, el('span', { text: '每隔 M 根高亮一根' }), period),
-        el('div', { class: 'bgg-sub', text: '高亮线样式' }, styleEditor(config.vertical.highlight)),
+        styleGrid('高亮线样式', config.vertical.highlight),
         centreToggle.node,
-        el('div', { class: 'bgg-sub', text: '中心线样式' }, styleEditor(config.vertical.center)),
+        styleGrid('中心线样式', config.vertical.center),
         el('p', { class: 'bgg-hint', text: '以 x=0 为中心向两侧对称，用于确认音符横向位置。' }),
       ),
 
