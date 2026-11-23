@@ -1,3 +1,5 @@
+// 配置模型：默认值、校验、读档合并、自定义节拍型增删。
+// 节拍型是分数 M/N：每拍均分 N 份、以 M 为步长，位置 = k·M/N（k=1,2,…，只落在当前拍内）。
 // Configuration model for Beat Grid Guide.
 // A pattern is a fraction M/N: "每拍均分 N 份、以 M 为步长"，位置 = k·M/N
 // （k=1,2,…，只落在当前拍内）。整拍层为特殊的 1/1（只标整数拍）。
@@ -22,20 +24,24 @@ const STYLES = ['solid', 'dashed', 'dotted'];
 const MODES = ['auto', 'recolor', 'overlay'];
 const SNAP_MODES = ['highlights', 'system'];
 
+// 数值夹取：非数字回退到 fallback，超出 [min,max] 夹回，并按 round 取整。
 function clampNumber(value, min, max, round = n => n, fallback = min) {
   const number = Number(value);
   if (!Number.isFinite(number)) return fallback;
   return round(Math.min(max, Math.max(min, number)));
 }
 
+// 校验 #rrggbb 颜色，非法值回退到 fallback。
 function normalizeColor(value, fallback) {
   return typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback;
 }
 
+// 构造一个节拍型对象（默认关闭、不吸附）。
 function makePattern(id, name, numerator, denominator, color, thickness, opacity, style, custom = false) {
   return { id, name, numerator, denominator, enabled: false, snap: false, color, thickness, opacity, style, mode: 'auto', custom };
 }
 
+// 生成默认配置：全部关闭，仅整拍 1/1 层单独开启（高亮即吸附）。
 export function createDefaultConfig() {
   const config = {
     schemaVersion: SCHEMA_VERSION,
@@ -62,6 +68,7 @@ export function createDefaultConfig() {
   return config;
 }
 
+// 把外部读入的单个节拍型清洗成合法结构（越界夹回、非法回退、补默认名）。
 function normalizePattern(pattern) {
   if (!pattern || typeof pattern !== 'object') return null;
   const denominator = clampNumber(pattern.denominator, 1, 512, n => Math.round(n), 1);
@@ -87,6 +94,7 @@ function normalizePattern(pattern) {
   };
 }
 
+// 合并样式字段（颜色/粗细/透明度/线型），非法值保留旧值。
 function mergeStyle(target, source) {
   if (!source || typeof source !== 'object') return;
   target.color = normalizeColor(source.color, target.color);
@@ -95,6 +103,7 @@ function mergeStyle(target, source) {
   target.style = STYLES.includes(source.style) ? source.style : target.style;
 }
 
+// 合并横线配置；若缺少整拍层则自动补一条 1/1（兼容旧存档）。
 function mergeHorizontal(target, source) {
   if (!source || typeof source !== 'object') return;
   if (typeof source.enabled === 'boolean') target.enabled = source.enabled;
@@ -121,6 +130,7 @@ function mergeHorizontal(target, source) {
   }
 }
 
+// 合并竖线配置（启用、周期、中心线开关与样式）。
 function mergeVertical(target, source) {
   if (!source || typeof source !== 'object') return;
   if (typeof source.enabled === 'boolean') target.enabled = source.enabled;
@@ -131,12 +141,14 @@ function mergeVertical(target, source) {
   mergeStyle(target.center, source.center);
 }
 
+// 合并吸附配置（总开关 + 模式）。
 function mergeSnap(target, source) {
   if (!source || typeof source !== 'object') return;
   if (typeof source.enabled === 'boolean') target.enabled = source.enabled;
   if (SNAP_MODES.includes(source.mode)) target.mode = source.mode;
 }
 
+// 用默认值兜底，把任意原始对象清洗成完整配置（读档入口）。
 export function normalizeConfig(raw) {
   const config = createDefaultConfig();
   if (!raw || typeof raw !== 'object') return config;
@@ -150,16 +162,19 @@ export function normalizeConfig(raw) {
   return config;
 }
 
+// 从模组存储读取配置；读失败时回退默认值。
 export function loadConfig(api) {
   let raw = {};
   try { raw = api.storage.read({}) ?? {}; } catch (error) { api.log?.('[beat-grid-guide] 读取配置失败', error); }
   return normalizeConfig(raw);
 }
 
+// 把配置写回模组存储；写失败只记日志，不打断编辑。
 export function saveConfig(api, config) {
   try { api.storage.write(config); } catch (error) { api.log?.('[beat-grid-guide] 保存配置失败', error); }
 }
 
+// 追加一个自定义节奏型：去重、生成唯一 id、按顺序循环配色，返回新建的节拍型。
 export function addCustomPattern(config, numerator, denominator) {
   const den = clampNumber(denominator, 2, 512, n => Math.round(n), 0);
   if (!Number.isFinite(den) || den < 2) return null;
@@ -177,6 +192,7 @@ export function addCustomPattern(config, numerator, denominator) {
   return pattern;
 }
 
+// 删除节拍型：1/1 与 1/2 不可删，且至少保留 2 个节拍型。
 export function removePattern(config, id) {
   const patterns = config.horizontal.patterns;
   const index = patterns.findIndex(pattern => pattern.id === id);

@@ -1,9 +1,11 @@
+// 渲染器：在 RPEN 原生时间轴网格之上叠加高亮线（横线/竖线）。
 // Renders the highlighted horizontal/vertical grid lines on top of RPEN's own
 // timeline grid. Purely additive: the native grid is never modified.
 import {
   computeHorizontalPositions, computeVerticalEntries, verticalGrid, verticalStyle, visibleBeatRange,
 } from './grid-model.mjs';
 
+// 渲染模块：在 RPEN 原生网格之上叠加高亮线。只叠加、不改原生网格。
 export function createRenderer(api, getConfig, getVersion) {
   const disposers = [];
   const patched = new WeakSet();
@@ -16,8 +18,10 @@ export function createRenderer(api, getConfig, getVersion) {
     return error => { if (count++ < 3) api.log?.('[beat-grid-guide] 渲染异常', error); };
   })();
 
+  // 清空位置缓存（配置或版本变化时调用）。
   function bumpCache() { cache.clear(); }
 
+  // 带缓存的位置计算：同一 key 只算一次，超过 32 条整体清空，避免无限增长。
   function cachedPositions(key, compute) {
     let value = cache.get(key);
     if (value === undefined) {
@@ -28,6 +32,7 @@ export function createRenderer(api, getConfig, getVersion) {
     return value;
   }
 
+  // 构造“拍 → y 坐标”的映射函数：兼容多线布局与流动视图（一拍可能对应多个 y）。
   function verticalFn(timeline, height, lineIndex) {
     if (lineIndex !== undefined && typeof timeline.verticalForLine === 'function') {
       return beat => timeline.verticalForLine(beat, lineIndex, height);
@@ -44,6 +49,7 @@ export function createRenderer(api, getConfig, getVersion) {
     return beat => timeline.vertical(beat, height);
   }
 
+  // 按样式分组批量绘制横线（同一样式只设一次画笔）。
   function paintPositions(context, positions, yForBeat, left, right, height) {
     if (!positions.length) return;
     const groups = new Map();
@@ -75,6 +81,7 @@ export function createRenderer(api, getConfig, getVersion) {
     }
   }
 
+  // 绘制横线高亮：计算可见范围与位置后交给 paintPositions。
   function drawHorizontal(timeline, context, left, width, height, lineIndex) {
     const config = getConfig();
     if (!config.enabled || !config.horizontal.enabled) return;
@@ -87,6 +94,7 @@ export function createRenderer(api, getConfig, getVersion) {
     return paintPositions(context, positions, verticalFn(timeline, height, lineIndex), left, left + width, height);
   }
 
+  // 绘制竖线高亮：在音符视图的每块画布上按序号画竖线，支持多线分屏。
   function drawVertical(timeline) {
     const config = getConfig();
     if (!config.enabled || !config.vertical.enabled) return;
@@ -145,6 +153,7 @@ export function createRenderer(api, getConfig, getVersion) {
     }
   }
 
+  // 包装原生的 grid / gridForLine / draw：先让原生画完，再叠加我们的高亮。
   function patchTimeline(timeline) {
     if (!timeline || patched.has(timeline)) return;
     patched.add(timeline);
@@ -172,6 +181,7 @@ export function createRenderer(api, getConfig, getVersion) {
     });
   }
 
+  // 时间轴实例可能被重建/切换：发现新实例就重新挂接。
   function reconcile() {
     const timeline = api.editor.timeline;
     if (timeline && timeline !== patchedTimeline) { patchedTimeline = timeline; patchTimeline(timeline); }

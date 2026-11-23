@@ -9,6 +9,7 @@ const SWATCH_COLORS = ['#efe9df', '#ff6060', '#4aaeff', '#ffc23d', '#b18cff', '#
 const MIN_WIDTH = 450;
 const MIN_HEIGHT = 700;
 
+// 轻量 DOM 构造器：el('div', { class: 'x', text: 'hi' }, child...)。
 function el(tag, attrs = {}, ...children) {
   const node = document.createElement(tag);
   for (const [key, value] of Object.entries(attrs)) {
@@ -21,6 +22,7 @@ function el(tag, attrs = {}, ...children) {
   return node;
 }
 
+// 把键盘事件转成快捷键字符串（如 Ctrl+Shift+M → "CTRL&SHIFT&M"）。
 function fromKeyEvent(event) {
   const parts = [];
   if (event.ctrlKey || event.metaKey) parts.push('CTRL');
@@ -41,6 +43,7 @@ export function createPanel(api, config, onChange, options = {}) {
   let tutorial = null;
   let cancelShortcutRecording = null;
 
+  // 防抖提交：连续改动时只在停止 50ms 后触发一次 onChange。
   function commit() {
     clearTimeout(commitTimer);
     commitTimer = setTimeout(() => {
@@ -49,6 +52,7 @@ export function createPanel(api, config, onChange, options = {}) {
   }
 
   // Sliding switch: input followed by track; CSS uses `:checked + .bgg-track`.
+  // 滑动开关的隐藏 checkbox：change 时回调新状态。
   function switchInput(checked, onToggle) {
     const input = el('input', { type: 'checkbox', class: 'bgg-switch-input' });
     input.checked = Boolean(checked);
@@ -58,6 +62,7 @@ export function createPanel(api, config, onChange, options = {}) {
 
   // 滑动开关外壳。视觉全在 CSS：`.bgg-switch-input`（隐藏 checkbox）+ `.bgg-track`（灰轨）+ `.bgg-track::after`（圆点）。
   // 开启态由 `input:checked + .bgg-track` 驱动（黄色 + 圆点平移），见 style.css 的 `.bgg-track` 区块。
+  // 一行开关：文字 + 滑动开关，返回节点与 input 供外部同步。
   function toggleRow(text, checked, onToggle) {
     const input = switchInput(checked, onToggle);
     const node = el('label', { class: 'bgg-toggle-row' },
@@ -66,6 +71,7 @@ export function createPanel(api, config, onChange, options = {}) {
   }
 
   // Inline shortcut badge: shows the current key, click to re-capture.
+  // 快捷键徽标：显示当前键位，点击进入录制（Esc 取消 / Backspace 清除）。
   function shortcutBadge(settingKey) {
     const badge = el('button', { class: 'bgg-shortcut', type: 'button', title: '点击重设快捷键（Esc 取消，Backspace 清除）' }); 
     function sync() {
@@ -107,12 +113,14 @@ export function createPanel(api, config, onChange, options = {}) {
 
   // 取色：色块按钮 + 2×5 浮层（前 9 预设色 + 第 10 格「笔」自定义）。
   let activeColorPop = null;
+  // 关闭当前打开的取色浮层（全局单例）。
   function closeColorPop() {
     if (!activeColorPop) return;
     const close = activeColorPop;
     activeColorPop = null;
     close();
   }
+  // 取色控件：色块按钮 + 2×5 浮层（前 9 预设色 + 第 10 格「笔」打开原生取色器）。
   function colorField(source) {
     const field = el('div', { class: 'bgg-color-field' });
     const swatch = el('button', { type: 'button', class: 'bgg-color-swatch', title: '颜色' });
@@ -175,6 +183,7 @@ export function createPanel(api, config, onChange, options = {}) {
   }
 
   // 一组样式输入（颜色/粗细/透明度/线型）。返回 4 个元素：可放入网格行或 .bgg-style-row。
+  // 一组样式输入（颜色/粗细/透明度/线型），返回 4 个元素供网格行复用。
   function styleInputs(source) {
     const color = colorField(source);
     const thickness = el('input', {
@@ -197,17 +206,20 @@ export function createPanel(api, config, onChange, options = {}) {
     return [color, thickness, opacity, style];
   }
 
+  // 竖线区用：返回一行内联样式输入。
   function styleEditor(source) {
     return el('div', { class: 'bgg-style-row' }, ...styleInputs(source));
   }
 
   // 竖线区：标签 + 与横线列表同列宽对齐的样式行。
+  // 竖线区用：标签 + 与横线列表同列宽对齐的样式行。
   function styleGrid(label, source) {
     return el('div', { class: 'bgg-style-grid' },
       el('span', { class: 'bgg-style-grid-label', text: label }),
       ...styleInputs(source));
   }
 
+  // 节拍型列表的一行：拍型名 + 高亮开关 + 样式输入 + 删除按钮（1/1、1/2 不可删）。
   function patternRow(pattern) {
     const row = el('div', { class: 'bgg-pattern' });
     const toggle = switchInput(pattern.enabled, value => {
@@ -235,6 +247,7 @@ export function createPanel(api, config, onChange, options = {}) {
   // 结构：灰色凹槽 .bgg-segment + 黄色滑块 .bgg-seg-thumb + 两个文字标签 .bgg-seg-label。
   // 交互：拖动滑块或点击任意一侧，松手时停靠到最近一侧；文字颜色由 data-mode 决定。
   // 滑块位置用 CSS 变量 --thumb-x（0% / 100% / 拖动时的像素值），详见 style.css 注释。
+  // 吸附模式分段控件：灰色凹槽 + 黄色滑块 + 两个文字标签，支持拖动/点击停靠。
   function modeSegment() {
     const thumb = el('div', { class: 'bgg-seg-thumb' });
     const left = el('span', { class: 'bgg-seg-label', 'data-side': 'left', text: '仅高亮' });
@@ -289,6 +302,7 @@ export function createPanel(api, config, onChange, options = {}) {
   }
 
   // 复用教程弹窗样式的确认框。
+  // 确认框（复用教程弹窗样式）：点「确定」才执行 onConfirm。
   function confirmDialog(message, onConfirm) {
     const cancel = el('button', { class: 'bgg-tutorial-close', text: '取消' });
     const ok = el('button', { class: 'bgg-tutorial-close bgg-confirm-danger', text: '确定' });
@@ -304,6 +318,7 @@ export function createPanel(api, config, onChange, options = {}) {
     api.mount(overlay);
   }
 
+  // 构建面板主体：总开关、横线、竖线、吸附、诊断、关于等分区。
   function buildBody() {
     const controls = {};
 
@@ -462,9 +477,12 @@ export function createPanel(api, config, onChange, options = {}) {
 
   // ── 面板尺寸/位置 ──────────────────────────────────────────
   // 宽度默认 450（窄屏自适应），可拖右下角把手在 [450, 屏幕1/3] 内调整；高度在 [MIN_HEIGHT, 窗口高度] 内。
+  // 面板默认/最小宽度（窄屏自适应到屏宽）。
   function fixedWidth() { return Math.min(MIN_WIDTH, window.innerWidth); }
+  // 面板最大宽度：不超过屏幕宽度的一半。
   function maxWidth() { return Math.max(MIN_WIDTH, Math.floor(window.innerWidth / 2)); }
 
+  // 把面板尺寸与位置钳制在屏幕内（拖拽/缩放/窗口变化后调用）。
   function clampPanel() {
     if (panel.hidden) return;
     const vw = window.innerWidth;
@@ -480,6 +498,7 @@ export function createPanel(api, config, onChange, options = {}) {
     panel.style.top = top + 'px';
   }
 
+  // 恢复默认尺寸与位置（宽 450、高 700、靠右上方）。
   function resetSize() {
     const width = fixedWidth();
     panel.style.width = width + 'px';
@@ -490,6 +509,7 @@ export function createPanel(api, config, onChange, options = {}) {
     clampPanel();
   }
 
+  // 拖动标题栏时移动面板。
   function onDragMove(event) {
     if (!drag) return;
     panel.style.left = (drag.left + event.clientX - drag.x) + 'px';
@@ -498,6 +518,7 @@ export function createPanel(api, config, onChange, options = {}) {
     panel.style.bottom = 'auto';
     event.preventDefault();
   }
+  // 结束拖动并钳制位置。
   function endDrag() {
     drag = null;
     document.removeEventListener('pointermove', onDragMove, true);
@@ -505,6 +526,7 @@ export function createPanel(api, config, onChange, options = {}) {
     document.removeEventListener('pointercancel', endDrag, true);
     clampPanel();
   }
+  // 按下标题栏开始拖动（避开按钮/输入控件）。
   function startDrag(event) {
     if (event.button !== 0) return;
     if (event.target.closest?.('button, input, select, textarea, a, label')) return;
@@ -567,6 +589,7 @@ export function createPanel(api, config, onChange, options = {}) {
     document.addEventListener('pointerup', up, true);
   });
 
+  // 显示面板：重建主体并钳制位置。
   function show() {
     panel.hidden = false;
     if (!panel.style.left) { panel.style.left = 'calc(100vw - ' + (MIN_WIDTH + 12) + 'px)'; panel.style.top = '70px'; }
@@ -574,12 +597,15 @@ export function createPanel(api, config, onChange, options = {}) {
     clampPanel();
     launcher?.classList.add('active');
   }
+  // 隐藏面板：同时取消快捷键录制与取色浮层。
   function hide() { cancelShortcutRecording?.(); closeColorPop(); panel.hidden = true; launcher?.classList.remove('active'); }
+  // 切换面板显示/隐藏。
   function toggle() { if (panel.hidden) show(); else hide(); }
 
   close.addEventListener('click', () => hide());
 
   let launcher = null;
+  // 在工具条「吸附」旁创建「网格」按钮，点开设置面板。
   function createLauncher() {
     const button = el('button', {
       type: 'button', class: 'bgg-toolbar-button', 'data-mod-interactive': 'true',
@@ -599,6 +625,7 @@ export function createPanel(api, config, onChange, options = {}) {
     return button;
   }
 
+  // 刷新底部状态行（启用/吸附/响应次数）。
   function refreshStatus() {
     const stats = typeof options.getStats === 'function' ? options.getStats() : { calls: 0, active: false };
     status.dataset.active = '0';
@@ -610,6 +637,7 @@ export function createPanel(api, config, onChange, options = {}) {
     status.textContent = '吸附：仅高亮' + (names.length ? '（' + names.join('、') + '）' : '（未选择节拍型）') + ' · 已响应 ' + stats.calls + ' 次';
   }
 
+  // 重建面板主体，并保留当前滚动位置。
   function rebuild() {
     const scrollTop = contentHost.scrollTop;
     contentHost.replaceChildren(buildBody());
@@ -617,6 +645,7 @@ export function createPanel(api, config, onChange, options = {}) {
     refreshStatus();
   }
 
+  // 把配置状态同步回面板控件（命令/快捷键变化时用）；不重建，保留滚动位置。
   // In-place sync (no rebuild, keeps scroll position) for shortcut-driven changes.
   function sync() {
     const controls = currentControls;
@@ -633,6 +662,7 @@ export function createPanel(api, config, onChange, options = {}) {
     refreshStatus();
   }
 
+  // 显示新手教程弹窗（首次启用自动弹一次）。
   function showTutorial() {
     if (tutorial) { try { tutorial.remove(); } catch (error) { /* ignore */ } tutorial = null; }
     const closeButton = el('button', { class: 'bgg-tutorial-close', text: '知道了' });

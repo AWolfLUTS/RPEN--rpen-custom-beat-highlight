@@ -1,3 +1,5 @@
+// 节拍网格增强（Beat Grid Guide）模组入口。
+// 为 RPEN 时间轴网格增加节拍细分高亮与可选吸附；所有功能默认关闭，需在面板中开启。
 // Beat Grid Guide — entry point.
 // Enhance RPEN's timeline grid with beat-subdivision highlights and optional
 // custom snapping. Everything is off until the user enables it in the panel.
@@ -6,6 +8,7 @@ import { createRenderer } from './renderer.mjs';
 import { createSnapper } from './snapping.mjs';
 import { createPanel } from './panel.mjs';
 
+// 模组入口：RPEN 加载模组时调用 activate，返回的函数用于停用时清理。
 export function activate(api) {
   let config = loadConfig(api);
   let version = 0;
@@ -20,6 +23,7 @@ export function activate(api) {
   const renderer = createRenderer(api, getConfig, getVersion);
   const snapper = createSnapper(api, getConfig);
 
+  // 诊断：打印时间轴对象上哪些被依赖的方法存在，便于排查挂接问题。
   function logProbe() {
     try {
       const timeline = api.editor.timeline;
@@ -39,6 +43,7 @@ export function activate(api) {
 
   // Reset restores every option to its off/default state, mutating the live
   // config object so the panel's captured references stay valid.
+  // 就地重置：把当前 config 各字段恢复默认（保留对象引用，面板拿到的引用仍有效）。
   function resetInPlace() {
     const fresh = createDefaultConfig();
     config.enabled = fresh.enabled;
@@ -54,6 +59,7 @@ export function activate(api) {
     Object.assign(config.snap, fresh.snap);
   }
 
+  // 配置变更后的统一收尾：版本号 +1、落盘、失效渲染缓存、刷新面板。
   function applyChange(kind) {
     if (kind === 'reset') { resetInPlace(); panel.resetSize(); }
     version += 1;
@@ -102,6 +108,7 @@ export function activate(api) {
 
   // Commands: bind through manifest shortcuts, and expose a manager button.
   const offCommands = [];
+  // 注册一个模组命令（绑定到清单里的快捷键，同时在模组管理器里出现按钮）。
   function registerCommand(definition) {
     try { offCommands.push(api.commands.register(definition)); }
     catch (error) { api.log?.('[beat-grid-guide] 命令注册失败', error); }
